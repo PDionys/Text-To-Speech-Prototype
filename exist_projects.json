@@ -3,5 +3,5 @@
     "Text-To-Speech-Prototype": "E:/_Diplom",
     "model": "E:/_Diplom/Text-To-Speech-Prototype",
     "controller": "E:/_Diplom/Text-To-Speech-Prototype",
-    "": "/"
+    "ui": "E:/_Diplom/Text-To-Speech-Prototype"
 }

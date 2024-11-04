@@ -1,6 +1,7 @@
 from PySide6.QtCore import QObject, Signal
 from model.short_cut_button_model import ShortCutButtonModel
 from model.ProjectManagerModel import ProjectManagerModel
+from model.RecordingModel import RecordingModel
 
 class MainWindowModel(QObject):
     icon_changed = Signal(str)
@@ -24,6 +25,7 @@ class MainWindowModel(QObject):
                         ShortCutButtonModel('resources\\create_new_folder_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg', 'Project Manager',
                                             'resources\\create_new_folder_30dp_3F3F3F_FILL0_wght400_GRAD0_opsz24.svg')]
         self._projectManagerModel = ProjectManagerModel()
+        self._recordingModel = RecordingModel()
 
     @property
     def darkIcon(self):
