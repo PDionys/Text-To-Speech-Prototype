@@ -63,3 +63,10 @@ class ShortCutButton(QPushButton, CustomWidget):
         self._buttonIcon = SvgIcon(self, imgPath, imgWidth, imgHeight, xImgMove, yImgMove, imgStyle)
         self._buttonLabel = RobotoLabel(self, labelText, fontSize, fontTypeface , fontStyle, xFontMove, yFontMove)
         self._darkIcon = darkIcon
+
+class TTS_Frame(QFrame, CustomWidget):
+    def __init__(self, parentWidget, objectName, style, blureRadius, xOffset, yOffset):
+        super(TTS_Frame, self).__init__(parentWidget)
+
+        self.SetCustomWidgetProperty(objectName, 0, 0, 0, 0, style)
+        self.SetShadowEffect(blureRadius, xOffset, yOffset)
