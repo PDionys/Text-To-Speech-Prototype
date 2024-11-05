@@ -1,8 +1,7 @@
-from PySide6.QtWidgets import (QFrame, QWidget, QLabel, QHBoxLayout, QGridLayout)
+from PySide6.QtWidgets import (QFrame, QWidget, QLabel, QHBoxLayout, QGridLayout, QComboBox, QTextEdit, QLineEdit)
 from PySide6.QtGui import (QPainter, QPen)
 from PySide6.QtCore import (QSize, QTimer, QPropertyAnimation)
 from view.TTS_Widgets import *
-import threading, pyaudio, wave
 import numpy as np
 
 class VoiceRecordingView():
@@ -64,8 +63,8 @@ class VoiceRecordingView():
         self.time_elapsed = 0
 
         self.settingBodyQWidget = QWidget(self.bodyWidget)
-        self.settingBodyQWidget.setStyleSheet(u"background-color: green;")
-        self.settingBodyQWidget.setGeometry(0, widget.height()/3 + 10, widget.width()-20-175, widget.height()/3*2-10)
+        self.settingBodyQWidget.setStyleSheet(u"background-color: transparent;")
+        self.settingBodyQWidget.setGeometry(0, widget.height()/3 + 10, widget.width()-20-175, (widget.height()/3)*2-30)
         self.settingBodyLayout = QHBoxLayout()
         self.settingBodyLayout.setContentsMargins(0,0,0,0)
         self.settingBodyQWidget.setLayout(self.settingBodyLayout)
@@ -76,19 +75,23 @@ class VoiceRecordingView():
         self.settingsButtonGridLayout = QGridLayout(self.settingsButtonFrame)
         self.settingsButtonGridLayout.setContentsMargins(5, 5, 5, 5)
         self.settingsButtonGridLayout.setSpacing(5)
-        self.SettingsButtonSetUp(widget)
+        self.SettingsButtonSetUp(widget, controller)
 
         controller.audio_data_signal.connect(self.waveFormWidget.update_waveform)
         
         bodyLayout.addWidget(self.bodyWidget)
 
-    def SettingsButtonSetUp(self, widget):
+    def SettingsButtonSetUp(self, widget, controller):
         for i in range(0, 2):
             for j in range(0, 2):
-                sButton = self.RecordButtonSetUp('test', 80, u"background-color: blue;")
-                sButton.clicked.connect(lambda: self.open_setting(sButton.objectName(), widget))
-                self.settingsButtons.append(sButton)
-                self.settingsButtonGridLayout.addWidget(sButton, i, j, 1, 1)
+                self.settingsButtons.append(self.RecordButtonSetUp(controller.getSettingsButtonsId(i, j), 80, 
+                                                                   u"QPushButton{background-color: #BEBEBE;border-radius: 10px;"
+                                                                   "border: 5px solid #A9A9A9;}QPushButton:hover{background-color: #D3D3D3;}"
+                                                                   "QPushButton:pressed{background-color: #A9A9A9;}"))
+                self.settingsButtons[j+(2*i)].clicked.connect(lambda ch, id = self.settingsButtons[j+(2*i)].objectName(): self.open_setting(id, controller))
+                SvgIcon(self.settingsButtons[j+(2*i)], controller.getSettingsButtonsIcon(j+(2*i)), 70, 70, 5, 5, "background-color: transparent;")
+                self.settingsButtonGridLayout.addWidget(self.settingsButtons[j+(2*i)], i, j, 1, 1)
+
 
     def RecordButtonSetUp(self, name, size, style):
         button = QPushButton()
@@ -135,21 +138,53 @@ class VoiceRecordingView():
         milliseconds  = (self.time_elapsed % 1000)
         self.timerLabel.setText(f"{minutes:02}:{seconds:02}:{milliseconds:02}")
     
-    def open_setting(self, buttonId, widget):
+    def open_setting(self, buttonId, controller):
+        while self.settingBodyLayout.count():
+            item = self.settingBodyLayout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+
         body = QFrame(self.settingBodyQWidget)
-        body.setStyleSheet(u"background-color: red;")
+        body.setStyleSheet(u"background-color: #E3EAF5;\n""border-radius: 10px;\n border: 4px solid #B0B8C5;")
         self.settingBodyLayout.addWidget(body)
-        # body.setGeometry(0, 0, 0, 0)
 
-        # targetWidth = widget.width()-20-175
-        # targetHeight = widget.height()/3*2-10
+        self.setup_setting_content(buttonId, body, controller)
+    
+    def setup_setting_content(self, id, parent, controller):
+        if id == 'save':
+            saveLabel = RobotoLabel(parent, 'Який тип збереження:', 24, QFont.Normal, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 10)
+            saveComboBox = QComboBox(parent)
+            saveComboBox.setStyleSheet(u"background-color: white; color: black;")
+            saveComboBox.setFont(QFont('Roboto', 16, QFont.Normal))
+            saveComboBox.move(10, 44+10)
+            saveComboBox.addItems(controller.setSavingMethods())
+            saveComboBox.activated.connect(lambda ch, combo = saveComboBox: self.onComboBoxActivated(combo, parent))
+            saveName = QLineEdit(parent)
+            saveName.setStyleSheet(u"background-color: white; color: black;")
+            saveName.setGeometry(10+360, 44+10, 350, 35)
+            saveName.setFont(QFont('Roboto', 16, QFont.Normal))
+            saveName.setText('Назва файлу')
+            self.saveTextEdit = QTextEdit(parent)
+            self.saveTextEdit.setStyleSheet(u"background-color: white; color: black;")
+            self.saveTextEdit.setGeometry(10, 95, 0, 0)
+            self.saveTextEdit.setFont(QFont('Roboto', 14, QFont.Normal))
+            self.saveButton = QPushButton(parent)
+            self.saveButton.setStyleSheet(u"QPushButton{\nbackground-color: rgb(26, 58, 111);\nborder-radius: 5px;\ncolor: #FFFFFF;\nborder: 0px;}"
+                                     "\nQPushButton:hover{\nbackground-color: rgb(39, 74, 132);\n}\nQPushButton:pressed{"
+                                     "\nbackground-color: rgb(20, 42, 82);\n}")
+            self.saveButton.setText('Зберегти')
+            self.saveButton.setFont(QFont('Roboto', 18, QFont.Normal))
+            self.saveButton.adjustSize
+            self.saveButton.move(10, 95)
+            self.saveButton.clicked.connect(lambda ch, combo = saveComboBox, fileName = saveName: controller.save_audio(combo, fileName))
 
-        # animation = QPropertyAnimation(body, b"geometry")
-        # animation.setDuration(1000)  # Animation duration in milliseconds
-        # animation.setStartValue(QRect(targetWidth, 0, 0, 0))  # Start from top-right corner
-        # animation.setEndValue(QRect(0, 0, targetWidth, targetHeight))  # End at bottom-left corner
-        # animation.start()
-
+    def onComboBoxActivated(self, combobox, parent):
+        if combobox.currentIndex() == 0:
+            self.saveTextEdit.setGeometry(10, 95, 0, 0)
+            self.saveButton.move(10, 95)
+        elif combobox.currentIndex() == 1:
+            self.saveTextEdit.setGeometry(10, 95, parent.width()-20, parent.height()-95-50)
+            self.saveButton.move(10, 95+self.saveTextEdit.height()+10)
 
 class WaveformWidget(QWidget):
     def __init__(self, parent, w, h):

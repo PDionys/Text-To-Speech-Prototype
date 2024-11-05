@@ -42,10 +42,11 @@ class MainController(QObject):
             self.AddNewDataToProjectList(projectName.text(), projectPath.text())
         except Exception as e:
             # QMessageBox.critical(self, "Error", "Error 222", QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.NoButton)
-            msBox = QMessageBox()
-            msBox.setText(f"Failed to create folder: {str(e)}")
-            msBox.setWindowTitle("Error")
-            msBox.exec()
+            # msBox = QMessageBox()
+            # msBox.setText(f"Failed to create folder: {str(e)}")
+            # msBox.setWindowTitle("Error")
+            # msBox.exec()
+            self.write_message(f"Failed to create folder: {str(e)}", "Error")
 
     def DeleteExistProjectFromJSON(self, projectName, projectPath):
         with open('exist_projects.json', 'r') as f:
@@ -78,7 +79,7 @@ class MainController(QObject):
             self.audio_thread.join()
 
     def reset_recording(self):
-        self.save_audio()
+        # self.save_audio()
         self.frames = []
     
     
@@ -126,9 +127,27 @@ class MainController(QObject):
         self.is_playing = False
         print("Audio playback finished.")
     
-    def save_audio(self):
-        with wave.open('output.wav', "wb") as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
-            wf.setframerate(44100)
-            wf.writeframes(b''.join(self.frames))
+    def save_audio(self, combo_box, file_name):
+        name = ''
+        if self.frames != []:
+            name += file_name.text() + '.wav'
+            if combo_box.currentIndex() == 0:
+                with wave.open(name, "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
+                    wf.setframerate(44100)
+                    wf.writeframes(b''.join(self.frames))
+            self.write_message('Файл учпішно створено!', 'Info')
+    
+    def getSettingsButtonsId(self, i, j):
+        return self._model._recordingModel.settingsButtonsID[i][j]
+    def getSettingsButtonsIcon(self, i):
+        return self._model._recordingModel.settingsButtonsIcon[i]
+    def setSavingMethods(self):
+        return self._model._recordingModel.saveMethods
+    
+    def write_message(self, text, title):
+        msBox = QMessageBox()
+        msBox.setText(text)
+        msBox.setWindowTitle(title)
+        msBox.exec()
