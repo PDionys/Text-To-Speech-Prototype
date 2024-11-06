@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (QFrame, QWidget, QLabel, QHBoxLayout, QGridLayout
 from PySide6.QtGui import (QPainter, QPen)
 from PySide6.QtCore import (QSize, QTimer, QPropertyAnimation)
 from view.TTS_Widgets import *
+from view.utility.VocieRecordingSettingsView import *
 import numpy as np
 
 class VoiceRecordingView():
@@ -152,39 +153,11 @@ class VoiceRecordingView():
     
     def setup_setting_content(self, id, parent, controller):
         if id == 'save':
-            saveLabel = RobotoLabel(parent, 'Який тип збереження:', 24, QFont.Normal, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 10)
-            saveComboBox = QComboBox(parent)
-            saveComboBox.setStyleSheet(u"background-color: white; color: black;")
-            saveComboBox.setFont(QFont('Roboto', 16, QFont.Normal))
-            saveComboBox.move(10, 44+10)
-            saveComboBox.addItems(controller.setSavingMethods())
-            saveComboBox.activated.connect(lambda ch, combo = saveComboBox: self.onComboBoxActivated(combo, parent))
-            saveName = QLineEdit(parent)
-            saveName.setStyleSheet(u"background-color: white; color: black;")
-            saveName.setGeometry(10+360, 44+10, 350, 35)
-            saveName.setFont(QFont('Roboto', 16, QFont.Normal))
-            saveName.setText('Назва файлу')
-            self.saveTextEdit = QTextEdit(parent)
-            self.saveTextEdit.setStyleSheet(u"background-color: white; color: black;")
-            self.saveTextEdit.setGeometry(10, 95, 0, 0)
-            self.saveTextEdit.setFont(QFont('Roboto', 14, QFont.Normal))
-            self.saveButton = QPushButton(parent)
-            self.saveButton.setStyleSheet(u"QPushButton{\nbackground-color: rgb(26, 58, 111);\nborder-radius: 5px;\ncolor: #FFFFFF;\nborder: 0px;}"
-                                     "\nQPushButton:hover{\nbackground-color: rgb(39, 74, 132);\n}\nQPushButton:pressed{"
-                                     "\nbackground-color: rgb(20, 42, 82);\n}")
-            self.saveButton.setText('Зберегти')
-            self.saveButton.setFont(QFont('Roboto', 18, QFont.Normal))
-            self.saveButton.adjustSize
-            self.saveButton.move(10, 95)
-            self.saveButton.clicked.connect(lambda ch, combo = saveComboBox, fileName = saveName: controller.save_audio(combo, fileName))
-
-    def onComboBoxActivated(self, combobox, parent):
-        if combobox.currentIndex() == 0:
-            self.saveTextEdit.setGeometry(10, 95, 0, 0)
-            self.saveButton.move(10, 95)
-        elif combobox.currentIndex() == 1:
-            self.saveTextEdit.setGeometry(10, 95, parent.width()-20, parent.height()-95-50)
-            self.saveButton.move(10, 95+self.saveTextEdit.height()+10)
+            self.settingView = Save(parent, controller)
+        elif id == 'settings':
+            self.settingView = Settings(parent, controller)
+        elif id == 'equalizer':
+            self.settingView = Equalizer(parent, controller)
 
 class WaveformWidget(QWidget):
     def __init__(self, parent, w, h):
