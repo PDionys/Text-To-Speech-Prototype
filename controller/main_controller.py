@@ -81,10 +81,10 @@ class MainController(QObject):
     
     def record_audio(self):
         p = pyaudio.PyAudio()
-        stream = p.open(format=pyaudio.paInt16, channels=1, rate=self._model._recordingModel.rate, input=True, input_device_index=self._model._recordingModel.microphone
+        stream = p.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, input_device_index=self._model._recordingModel.microphone
                         , frames_per_buffer=1024)
 
-        print("Recording...")
+        # print("Recording...")
         while self.is_recording:
             data = stream.read(1024)
             self.frames.append(data)
@@ -95,7 +95,7 @@ class MainController(QObject):
         stream.close()
         p.terminate()
         
-        print("Recording stopped.")
+        # print("Recording stopped.")
 
     def play_sound(self):
         if self.is_playing:
@@ -110,10 +110,10 @@ class MainController(QObject):
 
     def play_audio(self):
         p = pyaudio.PyAudio()
-        stream = p.open(format=pyaudio.paInt16, channels=1, rate=44100, output=True, 
+        stream = p.open(format=pyaudio.paInt16, channels=1, rate=self._model._recordingModel.rate, output=True, 
                         output_device_index=self._model._recordingModel.outputDevice)
 
-        print("Playing audio...")
+        # print("Playing audio...")
         for frame in self.frames:
             if not self.is_playing:
                 break
@@ -123,46 +123,68 @@ class MainController(QObject):
         stream.close()
         p.terminate()
         self.is_playing = False
-        print("Audio playback finished.")
+        # print("Audio playback finished.")
     
     def save_audio(self, combo_box, file_name):
         name = ''
         if self.frames != []:
             name += file_name.text() + '.wav'
             if combo_box.currentIndex() == 0:
-                with wave.open(name, "wb") as wf:
-                    wf.setnchannels(1)
-                    wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
-                    wf.setframerate(44100)
-                    wf.writeframes(b''.join(self.frames))
+                self.save(name)
             self.write_message('Файл учпішно створено!', 'Info')
+    def save(self, name):
+        with wave.open(name, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
+            wf.setframerate(self._model._recordingModel.rate)
+            wf.writeframes(b''.join(self.frames))
     
     def resample_audio(self, speed_factor=1.0):
-        speed_factor = (200 - speed_factor)/100
+        # speed_factor = (200 - speed_factor)/100
+        speed_factor = speed_factor/100
         self._model._recordingModel.rate = int(44100*speed_factor)
-    def change_volum(self):
-        with wave.open('fast.wav', 'rb') as wf:
-            # Get parameters from the file (sample width, channels, rate, etc.)
-            self._model._recordingModel.rate = wf.getframerate()  # Sample rate
-            self._model._recordingModel.microphone = wf.getnchannels()  # Number of channels (1 for mono)
-            sample_width = wf.getsampwidth()  # Sample width (e.g., 2 bytes for 16-bit)
+    def change_volum(self, volume):
+        if self.frames != []:
+            self.save('temp.wav')
+            sound = AudioSegment.from_file("temp.wav")
+            louder_song = sound + volume
+            louder_song.export("temp.wav", format='wav')
+            self.load_frames()
+
+    def pitch_shift(self, parameters):
+        for i in range(0, len(parameters)):
+            parameter = parameters[i].objectName()
+            if parameter == 'pitch-amount':
+                semitones = parameters[i].value()
+            elif parameter == 'fine-tuning':
+                cents = parameters[i].value()
+        if self.frames != []:
+            self.save('temp.wav')
+            sound = AudioSegment.from_file('temp.wav', format='wav')
+            total_shift = semitones + (cents / 100)
+            new_sample_rate = int(sound.frame_rate * (2.0 ** (total_shift / 12)))
+            pitch_shifted_sound = sound._spawn(sound.raw_data, overrides={'frame_rate': new_sample_rate})
+            pitch_shifted_sound = pitch_shifted_sound.set_frame_rate(44100)
+            pitch_shifted_sound.export("temp.wav", format="wav")
+            self.load_frames()
+        
+    def load_frames(self):
+        with wave.open('temp.wav', 'rb') as wf:
+            self._model._recordingModel.rate = wf.getframerate()
+            self._model._recordingModel.microphone = wf.getnchannels()
+            sample_width = wf.getsampwidth()
             
-            # Initialize the frames list
             self.frames = []
             
-            # Read the audio data in chunks and store it in frames
-            chunk_size = 1024  # Define how much data to read at a time (this is the same as frames_per_buffer)
+            chunk_size = 1024
             while True:
                 data = wf.readframes(chunk_size)
                 if not data:
-                    break  # No more data to read
+                    break
                 self.frames.append(data)
                 
-                # Optionally, convert the frame data to a numpy array for processing
-                audio_chunk = np.frombuffer(data, dtype=np.int16)  # Assuming 16-bit PCM data
-                self.audio_data_signal.emit(audio_chunk)  # Emit or process the audio data
-                
-        # print(f"Audio loaded from {filename} with {len(self.frames)} frames.")
+                audio_chunk = np.frombuffer(data, dtype=np.int16)
+                # self.audio_data_signal.emit(audio_chunk)
         
     
     def getSettingsButtonsId(self, i, j):
@@ -219,4 +241,13 @@ class MainController(QObject):
 
     def make_adjustement(self, tempo, volume, pan):
         self.resample_audio(int(tempo.text()))
-        self.change_volum()
+        self.change_volum(volume.value())
+    
+    def apply_effects(self, radio, group, parameters):
+        for i in range(0, len(group)):
+            if radio[i].isChecked():
+                effect = group[i].objectName()
+                if effect == 'pitch-box':
+                    self.pitch_shift(parameters[i])
+                elif effect == 'test':
+                    print('papaya') 

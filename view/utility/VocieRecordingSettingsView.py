@@ -1,5 +1,5 @@
 from view.TTS_Widgets import (RobotoLabel)
-from PySide6.QtWidgets import (QComboBox, QLineEdit, QTextEdit, QPushButton, QSlider)
+from PySide6.QtWidgets import (QComboBox, QLineEdit, QTextEdit, QPushButton, QSlider, QGroupBox, QCheckBox, QWidget, QSpinBox)
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt, Slot
 
@@ -60,7 +60,7 @@ class Settings:
         self.outputCombobox.activated.connect(lambda ch, combo = self.outputCombobox: controller.change_output_device(combo))
 
 class Equalizer:
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, waveform):
         self.tempoLabel = RobotoLabel(parent, 'Темп:', 18, QFont.Bold, 
                                       "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 10)
         self.tempoLineEdit = QLineEdit(parent)
@@ -69,7 +69,6 @@ class Equalizer:
         self.tempoLineEdit.setFont(QFont('Roboto', 16, QFont.Normal))
         self.tempoLineEdit.setStyleSheet(u'background-color: white; color: black;')
         self.tempoLineEdit.adjustSize()
-        print(self.tempoLineEdit.text())
 
         self.volumeLabel = RobotoLabel(parent, "Гучність звуку:", 18, QFont.Bold, 
                                       "background-color: transparent; border: 0px; color: #3F3F3F;", self.tempoLineEdit.width() + 20, 10)
@@ -77,9 +76,9 @@ class Equalizer:
         self.volumeSlider.setGeometry(self.tempoLineEdit.width() + 20, self.volumeLabel.geometry().y()+35, 200, 
                                       self.tempoLineEdit.height())
         self.volumeSlider.setStyleSheet("background-color: transparent; border: 0px;")
-        self.volumeSlider.setMinimum(0)
-        self.volumeSlider.setMaximum(200)
-        self.volumeSlider.setValue(100)
+        self.volumeSlider.setMinimum(-36)
+        self.volumeSlider.setMaximum(36)
+        self.volumeSlider.setValue(0)
         # self.volumeSlider.valueChanged.connect(self.adjust_volume)
         
         self.panLabel = RobotoLabel(parent, 'Панорамувати:', 18, QFont.Bold, 
@@ -106,10 +105,78 @@ class Equalizer:
                                     "\nbackground-color: rgb(20, 42, 82);\n}")
         self.equalizerButton.setText('Застосувати')
         self.equalizerButton.setFont(QFont('Roboto', 18, QFont.Normal))
-        self.equalizerButton.adjustSize
+        self.equalizerButton.adjustSize()
         self.equalizerButton.move(10, self.tempoLineEdit.geometry().y() + 45)
         self.equalizerButton.clicked.connect(lambda ch, tempo = self.tempoLineEdit, volume = self.volumeSlider, 
-                                             pan = self.panSlider: controller.make_adjustement(tempo, volume, pan))
+                                             pan = self.panSlider: self.adjust_sound(controller, waveform, tempo, volume, pan))
     
-    # def adjust_volume(self, tempo, volume, pan):
-    #     print(f"tempo is: {tempo.text()}, volume is: {volume.value()}, pan is: {pan.value()}")
+    def adjust_sound(self, controller, waveform, tempo, volume, pan):
+        # waveform.clear_waveform()
+        controller.make_adjustement(tempo, volume, pan)
+    
+class Effects:
+    def __init__(self, parent, controller):
+        self.effectsRadioButton = [
+            self.create_radio_button(parent, 'pitch'),
+            self.create_radio_button(parent, 'test')
+        ]
+        self.effectsGroupBox = [
+            self.create_group_box(parent, 'pitch-box', 'Зміщення висоти'),
+            self.create_group_box(parent, 'test', 'Test')
+        ]
+        self.effectsParameters = [
+            [
+                RobotoLabel(None, 'Величина зміщення висоти (півтони):', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 20),
+                self.create_spin_box(400, 20, 'pitch-amount', 12, -12),
+                RobotoLabel(None, 'Точне налаштування (центи):', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 45),
+                self.create_spin_box(310, 45, 'fine-tuning', 99, 0),
+                RobotoLabel(None, '%', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 360, 45)
+            ],
+            [
+                RobotoLabel(None, 'test:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 20)
+            ]
+        ]
+
+        for i in range(0, len(self.effectsGroupBox)):
+            self.effectsRadioButton[i].move(10, (self.effectsGroupBox[i].height()*i+10)+10*i)
+            self.effectsGroupBox[i].move(30, (self.effectsGroupBox[i].height()*i+10)+10*i)
+            for j in range(0, len(self.effectsParameters[i])):
+                self.effectsParameters[i][j].setParent(self.effectsGroupBox[i])
+        
+        self.effectsApplyButton = QPushButton(parent)
+        self.effectsApplyButton.setStyleSheet(u"QPushButton{\nbackground-color: rgb(26, 58, 111);\nborder-radius: 5px;\ncolor: #FFFFFF;\nborder: 0px;}"
+                                    "\nQPushButton:hover{\nbackground-color: rgb(39, 74, 132);\n}\nQPushButton:pressed{"
+                                    "\nbackground-color: rgb(20, 42, 82);\n}")
+        self.effectsApplyButton.setText('Застосувати')
+        self.effectsApplyButton.setFont(QFont('Roboto', 18, QFont.Normal))
+        self.effectsApplyButton.adjustSize()
+        self.effectsApplyButton.move(10, len(self.effectsGroupBox)*self.effectsGroupBox[0].height() + 10 + 10*len(self.effectsGroupBox))
+        self.effectsApplyButton.clicked.connect(lambda ch, radio = self.effectsRadioButton, group = self.effectsGroupBox,
+                                                parameters = self.effectsParameters: controller.apply_effects(radio, group, parameters))
+    
+    def create_radio_button(self, parent, name):
+        checkBox = QCheckBox(parent)
+        checkBox.setObjectName(name)
+        checkBox.setStyleSheet(u'background-color: transparent; border: 0px;')
+        checkBox.setText('')
+        # checkBox.move(x, y)
+        return checkBox
+    def create_group_box(self, parent, name, text):
+        groupBox = QGroupBox(parent)
+        groupBox.setObjectName(name)
+        # groupBox.setStyleSheet(u'background-color: white; color: black; border: 2px')
+        groupBox.setFont(QFont('Roboto', 14, QFont.Bold))
+        groupBox.setTitle(text)
+        groupBox.setGeometry(0, 0, 500, 80)
+        return groupBox
+    def create_spin_box(self, x, y, name, max, min):
+        spinBox = QSpinBox()
+        spinBox.setObjectName(name)
+        spinBox.move(x, y)
+        spinBox.setMaximum(max)
+        spinBox.setMinimum(min)
+        spinBox.setValue(0)
+        spinBox.setFont(QFont('Roboto', 14, QFont.Bold))
+        spinBox.setStyleSheet(u'background-color: white; color: black; border: 0px;')
+        spinBox.adjustSize()
+        return spinBox

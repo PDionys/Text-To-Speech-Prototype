@@ -157,7 +157,9 @@ class VoiceRecordingView():
         elif id == 'settings':
             self.settingView = Settings(parent, controller)
         elif id == 'equalizer':
-            self.settingView = Equalizer(parent, controller)
+            self.settingView = Equalizer(parent, controller, self.waveFormWidget)
+        elif id == 'effects':
+            self.settingView = Effects(parent, controller)
 
 class WaveformWidget(QWidget):
     def __init__(self, parent, w, h):

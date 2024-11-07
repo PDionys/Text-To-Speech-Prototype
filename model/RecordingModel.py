@@ -7,7 +7,7 @@ class RecordingModel:
 
         self.microphone = 1
         self.outputDevice = 4
-        self.volume = 1.0
+        self.volume = 0
         self.rate = 44100
 
         self.settingsButtonsID = [
@@ -18,7 +18,7 @@ class RecordingModel:
             'resources\\save_70dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.svg',
             'resources\\settings_70dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.svg',
             'resources\\equalizer_70dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.svg',
-            'resources\\bug_report_24dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.svg'
+            'resources\\edit_audio_70dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.svg'
         ]
         
         self.saveMethods = ['Зразок голосу для копіювання', 'Навчальні данні для нової моделі']
