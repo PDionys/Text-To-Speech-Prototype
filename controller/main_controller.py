@@ -4,7 +4,9 @@ import os, json, threading
 import pyaudio
 import wave
 import numpy as np
+from scipy.signal import convolve
 from pydub import AudioSegment
+from scipy.io import wavfile
 
 class MainController(QObject):
     audio_data_signal = Signal(np.ndarray)
@@ -167,7 +169,49 @@ class MainController(QObject):
             pitch_shifted_sound = pitch_shifted_sound.set_frame_rate(44100)
             pitch_shifted_sound.export("temp.wav", format="wav")
             self.load_frames()
-        
+    
+    def add_reverb(self, parameters):
+        for i in range(0, len(parameters)):
+            parameter = parameters[i].objectName()
+            if parameter == 'reverb-intensity':
+                reverb_intensity = parameters[i].value() / 100
+            elif parameter == 'reverb-decay':
+                decay = parameters[i].value() / 100
+        if self.frames != []:
+            self.save('temp.wav')
+            audio = AudioSegment.from_file('temp.wav')
+            samples = np.array(audio.get_array_of_samples())
+            impulse_response = np.zeros(int(len(samples) * reverb_intensity))
+            impulse_response[0] = 1
+            impulse_response[int(len(impulse_response) / 2)] = decay
+            reverberated_samples = convolve(samples, impulse_response, mode='full')
+            reverb_audio = audio._spawn(reverberated_samples[:len(samples)].astype(np.int16).tobytes())
+            reverb_audio.export('temp.wav', format="wav")
+            self.load_frames()
+    
+    def make_robotic_voice(self, parameters):
+        for i in range(0, len(parameters)):
+            parameter = parameters[i].objectName()
+            if parameter == 'pitch-factor':
+                pitch_factor = parameters[i].value() / 100
+            elif parameter == 'tremolo-frequency':
+                tremolo_frequency = parameters[i].value()
+            elif parameter == 'tremolo-depth':
+                tremolo_depth = parameters[i].value() / 100
+        if self.frames != []:
+            self.save('temp.wav')
+            sample_rate, audio_data = wavfile.read('temp.wav')
+            shifted_audio = np.interp(
+                np.arange(0, len(audio_data), pitch_factor),
+                np.arange(0, len(audio_data)),
+                audio_data
+            ).astype(audio_data.dtype)
+            tremolo = (1 - tremolo_depth) + tremolo_depth * np.sin(2 * np.pi * tremolo_frequency * np.arange(len(shifted_audio)) / sample_rate)
+            robotic_audio = (shifted_audio * tremolo).astype(np.int16)
+            wavfile.write('temp.wav', sample_rate, robotic_audio)
+            self.load_frames()
+
+
     def load_frames(self):
         with wave.open('temp.wav', 'rb') as wf:
             self._model._recordingModel.rate = wf.getframerate()
@@ -249,5 +293,7 @@ class MainController(QObject):
                 effect = group[i].objectName()
                 if effect == 'pitch-box':
                     self.pitch_shift(parameters[i])
-                elif effect == 'test':
-                    print('papaya') 
+                elif effect == 'reverb-box':
+                    self.add_reverb(parameters[i])
+                elif effect == 'robotic-box':
+                    self.make_robotic_voice(parameters[i])

@@ -118,11 +118,13 @@ class Effects:
     def __init__(self, parent, controller):
         self.effectsRadioButton = [
             self.create_radio_button(parent, 'pitch'),
-            self.create_radio_button(parent, 'test')
+            self.create_radio_button(parent, 'reverb'),
+            self.create_radio_button(parent, 'robotic')
         ]
         self.effectsGroupBox = [
             self.create_group_box(parent, 'pitch-box', 'Зміщення висоти'),
-            self.create_group_box(parent, 'test', 'Test')
+            self.create_group_box(parent, 'reverb-box', 'Ехо та реверберація'),
+            self.create_group_box(parent, 'robotic-box', 'Роботизований ефект'),
         ]
         self.effectsParameters = [
             [
@@ -133,7 +135,23 @@ class Effects:
                 RobotoLabel(None, '%', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 360, 45)
             ],
             [
-                RobotoLabel(None, 'test:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 20)
+                RobotoLabel(None, 'Інтенсивність реверберації:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 20),
+                self.create_spin_box(300, 20, 'reverb-intensity', 100, 0),
+                RobotoLabel(None, '%', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 360, 20),
+                RobotoLabel(None, 'Згасання:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 45),
+                self.create_spin_box(110, 45, 'reverb-decay', 100, 0),
+                RobotoLabel(None, '%', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 170, 45),
+            ],
+            [
+                RobotoLabel(None, 'Коефіцієнт висоти тону:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 20),
+                self.create_spin_box(260, 20, 'pitch-factor', 200, 30),
+                RobotoLabel(None, '%', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 320, 20),
+                RobotoLabel(None, 'Частота тремоло:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 45),
+                self.create_spin_box(190, 45, 'tremolo-frequency', 30, 1),
+                RobotoLabel(None, 'Hz', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 240, 45),
+                RobotoLabel(None, 'Глибина тремоло:', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 10, 70),
+                self.create_spin_box(195, 70, 'tremolo-depth', 100, 0),
+                RobotoLabel(None, '%', 14, QFont.Bold, "background-color: transparent; border: 0px; color: #3F3F3F;", 255, 70),
             ]
         ]
 
@@ -167,7 +185,7 @@ class Effects:
         # groupBox.setStyleSheet(u'background-color: white; color: black; border: 2px')
         groupBox.setFont(QFont('Roboto', 14, QFont.Bold))
         groupBox.setTitle(text)
-        groupBox.setGeometry(0, 0, 500, 80)
+        groupBox.setGeometry(0, 0, 500, 100)
         return groupBox
     def create_spin_box(self, x, y, name, max, min):
         spinBox = QSpinBox()
