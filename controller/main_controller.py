@@ -297,3 +297,19 @@ class MainController(QObject):
                     self.add_reverb(parameters[i])
                 elif effect == 'robotic-box':
                     self.make_robotic_voice(parameters[i])
+    
+    def openTextFile(self):
+        # string = ''
+        file = QFileDialog.getOpenFileName()
+        if file[0].endswith('.txt'):
+            with open(file[0], 'r') as f:
+                content = f.read()
+        
+        # split = content.split('\n')
+        # for i in range(0, len(split)):
+        #     if i == len(split)-1:
+        #         string += split[i]
+        #     else:
+        #         string += split[i] + ' \n'
+
+        return content
