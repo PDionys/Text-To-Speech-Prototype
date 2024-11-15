@@ -1,15 +1,19 @@
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-import os, json, threading
+import os, json, threading, time, sys
 import pyaudio
 import wave
 import numpy as np
 from scipy.signal import convolve
 from pydub import AudioSegment
 from scipy.io import wavfile
+import torch
+from TTS.api import TTS
 
 class MainController(QObject):
     audio_data_signal = Signal(np.ndarray)
+    tts_signal = Signal(float)
+    start_tts_signal = Signal(bool)
 
     def __init__(self, model):
         super().__init__()
@@ -31,8 +35,6 @@ class MainController(QObject):
         elif buttonId == "loadProjectButton":
             self._model.projectManagerModelNewPath(folder, 0)
 
-    
-    #TODO make message box
     def CreateNewProject(self, projectName, projectPath):
         newProject = os.path.join(projectPath.text(), projectName.text())
         try:
@@ -86,7 +88,6 @@ class MainController(QObject):
         stream = p.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, input_device_index=self._model._recordingModel.microphone
                         , frames_per_buffer=1024)
 
-        # print("Recording...")
         while self.is_recording:
             data = stream.read(1024)
             self.frames.append(data)
@@ -96,8 +97,6 @@ class MainController(QObject):
         stream.stop_stream()
         stream.close()
         p.terminate()
-        
-        # print("Recording stopped.")
 
     def play_sound(self):
         if self.is_playing:
@@ -142,7 +141,6 @@ class MainController(QObject):
             wf.writeframes(b''.join(self.frames))
     
     def resample_audio(self, speed_factor=1.0):
-        # speed_factor = (200 - speed_factor)/100
         speed_factor = speed_factor/100
         self._model._recordingModel.rate = int(44100*speed_factor)
     def change_volum(self, volume):
@@ -299,17 +297,35 @@ class MainController(QObject):
                     self.make_robotic_voice(parameters[i])
     
     def openTextFile(self):
-        # string = ''
         file = QFileDialog.getOpenFileName()
         if file[0].endswith('.txt'):
             with open(file[0], 'r') as f:
                 content = f.read()
-        
-        # split = content.split('\n')
-        # for i in range(0, len(split)):
-        #     if i == len(split)-1:
-        #         string += split[i]
-        #     else:
-        #         string += split[i] + ' \n'
 
         return content
+    
+    def start_to_covert(self, line):
+        self.text_line = line.toPlainText()
+        self.tts_thread = threading.Thread(target=self.text_to_speech)
+        self.tts_thread.start()
+    
+    def text_to_speech(self):
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
+        start_time = time.time()
+        self.start_tts_signal.emit(True)
+        local_model_path = 'C:\\Users\\mao\\AppData\\Local\\tts\\tts_models--multilingual--multi-dataset--xtts_v2'
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        tts = TTS(model_path=local_model_path, config_path=local_model_path+'\\config.json').to(device)
+        wav = tts.tts_to_file(text=self.text_line, speaker_wav="coquetts.wav", language="en", file_path="temp.wav")
+        end_time = time.time()
+        execution_time = end_time - start_time
+        sys.stderr.close()
+        sys.stdout.close()
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+        self.tts_signal.emit(execution_time)
+        # print(self.execution_time)
