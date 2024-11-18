@@ -70,7 +70,7 @@ class TexToSpeech:
         self.speaker_wavButton.setFont(QFont("Roboto", 12, QFont.Bold))
         self.speaker_wavButton.setText("Вказати файл")
         self.speaker_wavButton.setStyleSheet(u"QPushButton{\nbackground-color: #BDCEE8;\n border: 2px solid #97B2DB;\n}\n""QPushButton:hover{\nbackground-color: #E8D7BD;\nborder: 2px solid #DBC097;}\n""QPushButton:pressed{\nbackground-color: #CEA971;\nborder: 2px solid #C1924B;}")
-        # self.speaker_wavButton.clicked.connect()
+        self.speaker_wavButton.clicked.connect(lambda: self.set_speaker_wav(controller))
         splitLabel = RobotoLabel(self.modelSettingsFrame, 'Розділяти речення під час вимовлення:', 12, QFont.Bold,
                                  "background-color: transparent; border: 0px;", 10, self.speaker_wav.y()+self.speaker_wav.height()+10)
         self.splitComboBox = QComboBox(self.modelSettingsFrame)
@@ -108,12 +108,13 @@ class TexToSpeech:
                                      self.outputPlayerWidget.width()+30, 20)
         self.progressBar.setFormat('')
         self.timer = QTimer()
-        self.timer.timeout.connect(self.update_progress_bar)
+        self.timer.timeout.connect(lambda: self.update_progress_bar(controller))
 
 
         self.saveButton = QPushButton(self.modelSettinngWidget)
         self.saveButton.setStyleSheet(u"QPushButton{\nbackground-color: rgb(26, 58, 111);\nborder-radius: 5px;\ncolor: #FFFFFF;\nborder: 0px;}\nQPushButton:hover{\nbackground-color: rgb(39, 74, 132);\n}\nQPushButton:pressed{\nbackground-color: rgb(20, 42, 82);\n}")
         self.saveButton.setGeometry(self.modelSettinngWidget.width()/2+170, self.progressBar.y()+self.progressBar.height()+10, 60,60)
+        self.saveButton.clicked.connect(lambda: self.saveOutPut(controller))
         SvgIcon(self.saveButton, 'resources\\save_70dp_FFFFFF_FILL0_wght400_GRAD0_opsz48.svg', 60, 60, 0, 0, 'background-color: transparent;')
         self.loadingLabel = RobotoLabel(self.modelSettinngWidget, 'Завантаження ', 18, QFont.Bold, 
                                         "background-color: transparent; border: 0px; color: #3F3F3F;", 
@@ -177,12 +178,12 @@ class TexToSpeech:
         self.loadingGif.hide()
         self.move.stop()
         self.loadingLabel.hide()
-        self.execution_time = int(execution_time/2)
+        self.execution_time = int(execution_time/3)
         self.count_timer = 0
         self.progressBar.setValue(0)
         self.timer.start(1000)
     
-    def update_progress_bar(self):
+    def update_progress_bar(self, controller):
         self.count_timer += 1
         progress = self.count_timer/self.execution_time
         current_progres = self.progressBar.value()
@@ -190,6 +191,7 @@ class TexToSpeech:
             self.progressBar.setValue(int(progress*100))
         else:
             self.media_player.setSource(QUrl.fromLocalFile('temp.wav'))
+            controller.load_frames()
             self.timer.stop()
     
     def start_loading(self, trigger):
@@ -203,3 +205,11 @@ class TexToSpeech:
         
         keys_list = list(data.keys())
         return keys_list
+    
+    def saveOutPut(self, controller):
+        controller.save(self.fileNameLineEdit.text()+'.wav')
+
+    def set_speaker_wav(self, controller):
+        controller.get_voice_sample()
+        # print(controller.speaker_wav)
+        self.speaker_wav.setText(controller.speaker_wav)

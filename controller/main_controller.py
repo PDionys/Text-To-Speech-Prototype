@@ -317,22 +317,26 @@ class MainController(QObject):
     
     def text_to_speech(self):
         spliter = [True, False]
-        # original_stdout = sys.stdout
-        # original_stderr = sys.stderr
-        # sys.stdout = open(os.devnull, 'w')
-        # sys.stderr = open(os.devnull, 'w')
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
         start_time = time.time()
         self.start_tts_signal.emit(True)
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
         tts = TTS(model_path=self.model_path, config_path=self.model_path+'\\config.json').to(device)
-        wav = tts.tts_to_file(text=self.text_line, speaker_wav="coquetts.wav", language="en", file_path="temp.wav", 
+        wav = tts.tts_to_file(text=self.text_line, speaker_wav=self.speaker_wav, language="en", file_path="temp.wav", 
                               split_sentences=spliter[self.split_sentences])
         end_time = time.time()
         execution_time = end_time - start_time
-        # sys.stderr.close()
-        # sys.stdout.close()
-        # sys.stdout = original_stdout
-        # sys.stderr = original_stderr
+        sys.stderr.close()
+        sys.stdout.close()
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
         self.tts_signal.emit(execution_time)
         # print(self.execution_time)
+
+    def get_voice_sample(self):
+        file = QFileDialog.getOpenFileName()
+        self.speaker_wav = file[0]
