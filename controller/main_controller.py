@@ -304,28 +304,35 @@ class MainController(QObject):
 
         return content
     
-    def start_to_covert(self, line):
+    def start_to_covert(self, line, model, save, split, speaker):
         self.text_line = line.toPlainText()
+        self.model_path = model.currentText()
+        with open('tts_models.json', 'r') as f:
+            data = json.load(f)
+        self.model_path = data[self.model_path]
+        self.file_path = save.text()
+        self.split_sentences = split.currentIndex()
         self.tts_thread = threading.Thread(target=self.text_to_speech)
         self.tts_thread.start()
     
     def text_to_speech(self):
-        original_stdout = sys.stdout
-        original_stderr = sys.stderr
-        sys.stdout = open(os.devnull, 'w')
-        sys.stderr = open(os.devnull, 'w')
+        spliter = [True, False]
+        # original_stdout = sys.stdout
+        # original_stderr = sys.stderr
+        # sys.stdout = open(os.devnull, 'w')
+        # sys.stderr = open(os.devnull, 'w')
         start_time = time.time()
         self.start_tts_signal.emit(True)
-        local_model_path = 'C:\\Users\\mao\\AppData\\Local\\tts\\tts_models--multilingual--multi-dataset--xtts_v2'
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        tts = TTS(model_path=local_model_path, config_path=local_model_path+'\\config.json').to(device)
-        wav = tts.tts_to_file(text=self.text_line, speaker_wav="coquetts.wav", language="en", file_path="temp.wav")
+        tts = TTS(model_path=self.model_path, config_path=self.model_path+'\\config.json').to(device)
+        wav = tts.tts_to_file(text=self.text_line, speaker_wav="coquetts.wav", language="en", file_path="temp.wav", 
+                              split_sentences=spliter[self.split_sentences])
         end_time = time.time()
         execution_time = end_time - start_time
-        sys.stderr.close()
-        sys.stdout.close()
-        sys.stdout = original_stdout
-        sys.stderr = original_stderr
+        # sys.stderr.close()
+        # sys.stdout.close()
+        # sys.stdout = original_stdout
+        # sys.stderr = original_stderr
         self.tts_signal.emit(execution_time)
         # print(self.execution_time)

@@ -1,8 +1,9 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QPushButton, QLabel, QSlider, QProgressBar
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QPushButton, QLabel, QSlider, QProgressBar, QLineEdit, QComboBox
 from PySide6.QtGui import QFont, Qt, QMovie
 from view.TTS_Widgets import *
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtCore import Qt, QUrl, QTimer
+import json
 
 class TexToSpeech:
     def __init__(self, bodyLayout, controller):
@@ -45,6 +46,39 @@ class TexToSpeech:
         self.modelSettingsFrame = QFrame(self.modelSettinngWidget)
         self.modelSettingsFrame.setGeometry(10, 10, self.modelSettinngWidget.width()/2+150, self.modelSettinngWidget.height()/2+50)
         self.modelSettingsFrame.setStyleSheet(u"background-color: #E3EAF5;\n""border-radius: 10px;\n border: 2px solid #B0B8C5;")
+        fileNameLabel = RobotoLabel(self.modelSettingsFrame, 'Введіть назву файлу для збереження результату:', 12, QFont.Bold, 
+                    "background-color: transparent; border: 0px;", 10, 10)
+        self.fileNameLineEdit = QLineEdit(self.modelSettingsFrame)
+        self.fileNameLineEdit.move(10, fileNameLabel.height()+10)
+        self.fileNameLineEdit.setStyleSheet(u"background-color: white; color: black;")
+        self.fileNameLineEdit.setFont(QFont('Roboto', 12, QFont.Normal))
+        modelChoose = RobotoLabel(self.modelSettingsFrame, 'Оберіть модель для трансформації тексту в голос:', 12, QFont.Bold, 
+                    "background-color: transparent; border: 0px;", 10, self.fileNameLineEdit.y()+self.fileNameLineEdit.height()+10)
+        self.modelComboBox = QComboBox(self.modelSettingsFrame)
+        self.modelComboBox.setStyleSheet(u"background-color: white; color: black;")
+        self.modelComboBox.setFont(QFont('Roboto', 12, QFont.Normal))
+        self.modelComboBox.move(10, modelChoose.y()+modelChoose.height())
+        self.modelComboBox.addItems(self.load_models_list())
+        speakerLable = RobotoLabel(self.modelSettingsFrame, 'Виберіть приклад голосу, який потрібно відтворити:', 12, QFont.Bold,
+                                   "background-color: transparent; border: 0px;", 10, self.modelComboBox.y()+self.modelComboBox.height()+10)
+        self.speaker_wav = QLineEdit(self.modelSettingsFrame)
+        self.speaker_wav.setGeometry(10, speakerLable.y()+speakerLable.height(), self.modelSettingsFrame.width()/1.5, 25)
+        self.speaker_wav.setStyleSheet(u"background-color: white; color: black;")
+        self.speaker_wav.setFont(QFont('Roboto', 12, QFont.Normal))
+        self.speaker_wavButton = QPushButton(self.modelSettingsFrame)
+        self.speaker_wavButton.move(self.speaker_wav.x()+self.speaker_wav.width()+10, self.speaker_wav.y())
+        self.speaker_wavButton.setFont(QFont("Roboto", 12, QFont.Bold))
+        self.speaker_wavButton.setText("Вказати файл")
+        self.speaker_wavButton.setStyleSheet(u"QPushButton{\nbackground-color: #BDCEE8;\n border: 2px solid #97B2DB;\n}\n""QPushButton:hover{\nbackground-color: #E8D7BD;\nborder: 2px solid #DBC097;}\n""QPushButton:pressed{\nbackground-color: #CEA971;\nborder: 2px solid #C1924B;}")
+        # self.speaker_wavButton.clicked.connect()
+        splitLabel = RobotoLabel(self.modelSettingsFrame, 'Розділяти речення під час вимовлення:', 12, QFont.Bold,
+                                 "background-color: transparent; border: 0px;", 10, self.speaker_wav.y()+self.speaker_wav.height()+10)
+        self.splitComboBox = QComboBox(self.modelSettingsFrame)
+        self.splitComboBox.setStyleSheet(u"background-color: white; color: black;")
+        self.splitComboBox.setFont(QFont('Roboto', 12, QFont.Normal))
+        self.splitComboBox.move(10, splitLabel.y()+splitLabel.height())
+        self.splitComboBox.addItems(['Так', 'Ні'])
+        
 
         self.outputPlayerWidget = QWidget(self.modelSettinngWidget)
         self.outputPlayerWidget.setGeometry(self.modelSettinngWidget.width()/2+170, 10, self.modelSettinngWidget.width()/2+100, self.modelSettinngWidget.height()/4)
@@ -99,7 +133,9 @@ class TexToSpeech:
                                        self.progressBar.y()+self.progressBar.height()+10, 150, 60)
         self.convertButton.setText('Перетворити')
         self.convertButton.setFont(QFont('Roboto', 18, QFont.Normal))
-        self.convertButton.clicked.connect(lambda ch, line = self.textInputEdit: controller.start_to_covert(line))
+        self.convertButton.clicked.connect(lambda ch, line = self.textInputEdit, model = self.modelComboBox, save = self.fileNameLineEdit,
+                                           split = self.splitComboBox, speaker = self.speaker_wav:
+                                           controller.start_to_covert(line, model, save, split, speaker))
         self.ttsVLayout.addWidget(self.modelSettinngWidget)
 
         bodyLayout.addWidget(self.bodyWidget)
@@ -160,4 +196,10 @@ class TexToSpeech:
         self.loadingGif.show()
         self.move.start()
         self.loadingLabel.show()
+
+    def load_models_list(self):
+        with open('tts_models.json', 'r') as f:
+            data = json.load(f)
         
+        keys_list = list(data.keys())
+        return keys_list
