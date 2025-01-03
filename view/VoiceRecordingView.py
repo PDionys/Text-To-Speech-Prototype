@@ -109,7 +109,6 @@ class VoiceRecordingView():
             self.timer.stop()
             self.recordIcon.load('resources\\mic_40dp_FFFFFF_FILL0_wght400_GRAD0_opsz40.svg')
             controller.stop_recording()
-            # self.waveFormWidget.load_waveform('output.wav')
         else:
             self.timer.start(100)
             self.recordIcon.load('resources\\stop_circle_40dp_FFFFFF_FILL0_wght400_GRAD0_opsz40.svg')

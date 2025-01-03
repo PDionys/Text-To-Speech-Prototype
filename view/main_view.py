@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from PySide6.QtCore import Slot
 from view.ProjectManagerView import ProjectManagerView
 from view.VoiceRecordingView import VoiceRecordingView
+from view.TexToSpeechView import TexToSpeech
 
 class MainView(QMainWindow):
     def __init__(self, model, controller):
@@ -49,3 +50,5 @@ class MainView(QMainWindow):
             self.ui._body.setupUi(self.ui.bodyLayout, self._main_controller, self._model)
         elif self._model.headerText == "Recording Data":
             self.ui._body = VoiceRecordingView(self.ui.bodyLayout, self.ui.verticalLayoutWidget, self._main_controller)
+        elif self._model.headerText == "Text-to-Speech":
+            self.ui._body = TexToSpeech(self.ui.bodyLayout, self._main_controller)
