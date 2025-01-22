@@ -27,4 +27,5 @@
 5. Install another librarys
 
 ## 🔗 Ресурси
-[Demo link/Посилання на демо](https://github.com/user-attachments/assets/fd775c62-504f-4e98-912c-8debaa11f22e)
+[Demo link/Посилання на демо](https://github.com/user-attachments/assets/fd775c62-504f-4e98-912c-8debaa11f22e),
+[Dissertation/Дисертація](https://ela.kpi.ua/items/b5c23b0f-4462-4763-973f-948021f47445)
